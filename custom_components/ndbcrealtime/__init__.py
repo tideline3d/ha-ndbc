@@ -1,4 +1,5 @@
 """The NDBC Buoy Real-Time Data integration."""
+
 import asyncio
 import json
 
@@ -13,7 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.exceptions import ConfigEntryNotReady, PlatformNotReady
-from ndbcrealtime import NDBC
+from .client import NDBC
 
 from .const import DOMAIN, COORDINATOR, NDBC_API
 
@@ -22,11 +23,13 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = ["sensor"]
 
+
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the NDBC component."""
     hass.data.setdefault(DOMAIN, {})
 
     return True
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     """Set up NDBC from a config entry."""
@@ -36,7 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     station_id = conf["station_id"]
 
     try:
-        ndbc = NDBC(station_id = station_id)
+        ndbc = NDBC(station_id=station_id)
         observation = await ndbc.get_data()
     except ConnectionError as error:
         _LOGGER.debug("NDBC API: %s", error)
@@ -48,14 +51,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
         return False
 
     coordinator = NDBCUpdater(
-        hass, 
-        name="NDBC " + observation["location"]["name"], 
+        hass,
+        name="NDBC " + observation["location"]["name"],
         station_id=station_id,
         polling_interval=polling_interval,
     )
 
     await coordinator.async_refresh()
-    
+
     if not coordinator.last_update_success:
         raise ConfigEntryNotReady
 
@@ -64,7 +67,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
     }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    
+
     return True
 
 
@@ -83,6 +86,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
 
     return unload_ok
 
+
 class NDBCUpdater(DataUpdateCoordinator):
     """Class to manage fetching update data from the NDBC Realtime API."""
 
@@ -96,19 +100,19 @@ class NDBCUpdater(DataUpdateCoordinator):
         """Initialize the global NDBC data updater."""
 
         super().__init__(
-            hass = hass,
-            logger = _LOGGER,
-            name = name,
-            update_interval = timedelta(seconds=polling_interval),
+            hass=hass,
+            logger=_LOGGER,
+            name=name,
+            update_interval=timedelta(seconds=polling_interval),
         )
 
         self.station_id = station_id
 
     async def _async_update_data(self):
         """Fetch data from NDBC API."""
-        
+
         try:
-            #_LOGGER.debug("Updating the coordinator data.")
+            # _LOGGER.debug("Updating the coordinator data.")
             ndbc = NDBC(station_id=self.station_id)
             observation = await ndbc.get_data()
         except ConnectionError as error:
