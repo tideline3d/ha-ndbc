@@ -3,9 +3,7 @@
   "name": "NDBC Buoy Realtime Observation Data",
   "config_flow": true,
   "documentation": "https://github.com/djtimca/handbc",
-  "requirements": [
-    "ndbcrealtime==0.0.4"
-  ],
+  "requirements": [],
   "ssdp": [],
   "zeroconf": [],
   "homekit": {},
