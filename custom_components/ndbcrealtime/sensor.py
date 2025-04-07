@@ -5,9 +5,12 @@ import logging
 from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.helpers.entity import generate_entity_id
 from homeassistant.const import (
     ATTR_NAME, 
     UnitOfTemperature,
+    UnitOfPressure,
+    UnitOfSpeed,
     DEGREE,
     UnitOfTime
 )
@@ -43,7 +46,7 @@ SENSOR_TYPES = {
         "attribute_key": None,
         "name": "Wind Speed",
         "icon": "mdi:weather-windy-variant",
-        "device_class": None
+        "device_class": "wind_speed"
     },
     "wind_gusts": {
         "segment": "wind",
@@ -52,7 +55,7 @@ SENSOR_TYPES = {
         "attribute_key": None,
         "name": "Wind Gusts",
         "icon": "mdi:weather-windy",
-        "device_class": None
+        "device_class": "wind_speed"
     },
     "wave_height": {
         "segment": "waves",
@@ -179,11 +182,12 @@ class NDBCSensor(CoordinatorEntity[NDBCUpdater], SensorEntity):
 
         super().__init__(coordinator=coordinator)
 
-        self._name = f"{values['name']} - {coordinator.data['location']['name']}"
+        self._name = f"{values['name']}"
         self._unique_id = f"ndbc_{coordinator.station_id}_{sensor}"
-        self._device_name = f"NDBC - {coordinator.data['location']['name']}"
-        self._device_id = f"ndbc_{coordinator.station_id}"
+        self._device_name = f"Buoy Data - #{coordinator.station_id}"
+        self._device_id = f"ndbc_{coordinator.station_id}_{coordinator.station_id}"
         self._device_class = values["device_class"]
+        self.entity_id = generate_entity_id("sensor.{}", "weather_nbdc_" + coordinator.station_id + "_" + sensor, hass=coordinator.hass)
         self._segment = values["segment"]
         self._key = values["key"]
         self._raw_unit = coordinator.data["observation"][self._segment][values["unit_key"]]
@@ -256,6 +260,12 @@ class NDBCSensor(CoordinatorEntity[NDBCUpdater], SensorEntity):
             unit = UnitOfTemperature.CELSIUS
         elif unit == "degF":
             unit = UnitOfTemperature.FAHRENHEIT
+        elif unit == "m/s":
+            # Report wind speed in knots
+            unit = UnitOfSpeed.KNOTS
+        elif unit == "hPa":
+            # Report pressure in mbar
+            unit = UnitOfPressure.MBAR
         elif unit[0:3] == "deg":
             unit = DEGREE
 
@@ -270,4 +280,3 @@ class NDBCSensor(CoordinatorEntity[NDBCUpdater], SensorEntity):
         self.async_on_remove(
             self.coordinator.async_add_listener(self.async_write_ha_state)
         )
-

@@ -47,7 +47,7 @@ class NDBC:
         structured["location"] = {
             "latitude": float(station["@lat"]),
             "longitude": float(station["@lon"]),
-            "elevation": int(station.get("@elev", 0)),
+            "elevation": float(station.get("@elev", 0)),
             "name": station["@name"],
         }
 
